@@ -1,13 +1,17 @@
 [project]
-name = "dlqpiler_lib"
+name = "dlqpiler"
 version = "0.0.1"
 authors = [
     { name="Filipe C. Ferraz", email="filipe.ferraz0@gmail.com" },
 ]
-description = "Library containing the entire DLQpiler codebase"
+description = "DLQpiler codebase"
 readme = "README.md"
 requires-python = ">=3.0"
 dependencies = [
   "ply >= 3.11",
-  "qiskit >= 0.22"
+  "qiskit >= 0.22",
+  "typer >= 0.7"
 ]
+
+[project.scripts]
+dlqpiler = "dlqpiler.main:app"
