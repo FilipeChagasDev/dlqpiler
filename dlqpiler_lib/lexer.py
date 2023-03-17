@@ -17,7 +17,7 @@ reserved = {
     #'const': 'CONST',
     'amplify': 'AMPLIFY',
     'times': 'TIMES',
-    'hadamard': 'HADAMARD'
+    'bset': 'BSET'
 }
 
 #This is a list with the names of the tokens.

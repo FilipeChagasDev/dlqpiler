@@ -29,11 +29,21 @@ precedence = (
 
 # --- Parsing rules to arithmetic expressions ---
 
+#Parsing rule to the multiplication operator ('*')
+def p_expression_mul(p):
+    'expression : expression MUL expression'
+    if isinstance(p[1], int) and isinstance(p[3], int):
+        p[0] = p[1]*p[2]
+    elif isinstance(p[1], (ast.ArithmeticExpression, ast.Identifier, int)) and isinstance(p[3], (ast.ArithmeticExpression, ast.Identifier, int)):
+        p[0] = ast.Product.merge(p.lineno(0), p[1], p[3])
+    else:
+        raise ParsingError(p.lineno(0), 'The product operator can only be used with numerical values or arithmetic expressions as operators')
+    
 #Parsing rule to the division operator ('^')
 def p_expression_power(p):
     'expression : expression HAT expression'
     if isinstance(p[3], int):
-        if isinstance(p[1], ast.ArithmeticExpression):
+        if isinstance(p[1], (ast.ArithmeticExpression, ast.Identifier)):
             p[0] = ast.Power(p.lineno(0), p[1], p[3])
         elif isinstance(p[1], int):
             p[0] = p[1]**p[3]
@@ -53,7 +63,7 @@ def p_expression_division(p):
 #Parsing rule to unary minus
 def p_expression_uminus(p):
     'expression : MINUS expression %prec UMINUS'
-    if isinstance(p[2], ast.ArithmeticExpression):
+    if isinstance(p[2], (ast.ArithmeticExpression, ast.Identifier)):
         p[0] = ast.UnaryMinus(p.lineno(0), p[2])
     elif isinstance(p[2], int):
         p[0] = -p[2]
@@ -84,7 +94,7 @@ def p_expression_number(p):
 
 def p_expression_id(p):
     'expression : ID'
-    p[0] = p[1]
+    p[0] = ast.Identifier(p.lineno(0), p[1])
 
 #Defines a function to handle syntax errors
 def p_error(p):
