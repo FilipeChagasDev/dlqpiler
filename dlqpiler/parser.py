@@ -1,7 +1,7 @@
 #Filipe Chagas, 2023
 
-from dlqpiler_lib import lexer
-from dlqpiler_lib import ast
+from dlqpiler import lexer
+from dlqpiler import ast
 import ply.yacc as yacc
 
 #Defines a custom exception for parsing errors
