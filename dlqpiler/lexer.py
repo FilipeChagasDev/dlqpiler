@@ -10,14 +10,9 @@ reserved = {
     'and': 'AND',
     'or': 'OR',
     'not': 'NOT',
-    'if': 'IF',
-    'else': 'ELSE',
     'in': 'IN',
-    'as': 'AS',
-    #'const': 'CONST',
     'amplify': 'AMPLIFY',
     'times': 'TIMES',
-    'bset': 'BSET'
 }
 
 #This is a list with the names of the tokens.
@@ -32,20 +27,19 @@ tokens = [
    'HAT',
    # --- relational ---
    'EQUAL',
+   'NEQ',
    'LT',
    'GT',
    # --- others ---
    'COMMA',
    'ASSIGN',
    'SEMICOLON',
-   'COLON',
-   #'ELLIPSIS',
    'LPAREN',
    'RPAREN',
    'LCURLY',
    'RCURLY',
-   #'LBRACKET',
-   #'RBRACKET'
+   'LBRACKET',
+   'RBRACKET'
 ] + list(reserved.values())
 
 #Next, we define the regular expressions for the tokens
@@ -69,11 +63,9 @@ t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 t_LCURLY  =  r'\{'
 t_RCURLY  =  r'\}'
-#t_LBRACKET  =  r'\['
-#t_RBRACKET  =  r'\]'
+t_LBRACKET  =  r'\['
+t_RBRACKET  =  r'\]'
 t_SEMICOLON  =  r';'
-t_COLON  =  r':'
-#t_ELLIPSIS = r'\.\.\.'
 
 #Next, we define the regex of numbers and identifiers (or reserved words)
 def t_NUMBER(t):
