@@ -107,7 +107,11 @@ def p_expression_or(p):
     'expression : expression OR expression'
     if isinstance(p[1], int) and isinstance(p[3], int):
         p[0] = int(bool(p[1] % 2) or bool(p[3] % 2))
-    elif isinstance(p[1], (ast.Expression, int)) and isinstance(p[3], (ast.Expression, int)):
+    elif isinstance(p[1], ast.Expression) and isinstance(p[3], int):
+        p[0] = 1 if bool(p[3] % 2) else p[1]
+    elif isinstance(p[1], int) and isinstance(p[3], ast.Expression):
+        p[0] = 1 if bool(p[1] % 2) else p[3]
+    elif isinstance(p[1], ast.Expression) and isinstance(p[3], ast.Expression):
         p[0] = ast.Or.merge(p.lineno(0), p[1], p[3])
     else:
         raise ParsingError(p.lineno(0), f'It is not possible to apply the OR operator to types {(type(p[1]), type(p[3]))}')
@@ -116,7 +120,11 @@ def p_expression_and(p):
     'expression : expression AND expression'
     if isinstance(p[1], int) and isinstance(p[3], int):
         p[0] = int(bool(p[1] % 2) and bool(p[3] % 2))
-    elif isinstance(p[1], (ast.Expression, int)) and isinstance(p[3], (ast.Expression, int)):
+    elif isinstance(p[1], ast.Expression) and isinstance(p[3], int):
+        p[0] = p[1] if bool(p[3] % 2) else 0
+    elif isinstance(p[1], int) and isinstance(p[3], ast.Expression):
+        p[0] = p[3] if bool(p[1] % 2) else 0
+    elif isinstance(p[1], ast.Expression) and isinstance(p[3], ast.Expression):
         p[0] = ast.And.merge(p.lineno(0), p[1], p[3])
     else:
         raise ParsingError(p.lineno(0), f'It is not possible to apply the AND operator to types {(type(p[1]), type(p[3]))}')

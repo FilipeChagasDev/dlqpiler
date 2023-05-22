@@ -10,7 +10,9 @@ requires-python = ">=3.0"
 dependencies = [
   "ply >= 3.11",
   "qiskit >= 0.22",
-  "typer >= 0.7"
+  "typer >= 0.7",
+  "pandas",
+  "openpyxl"
 ]
 
 [project.scripts]
