@@ -1,0 +1,6 @@
+x1[1] in {false, true};
+x2[1] in {false, true};
+x3[1] in {false, true};
+x4[1] in {false, true};
+y[1] := (x1 or not x3 or x4) and (not x2 and x3 and not x4);
+amplify y 3 times

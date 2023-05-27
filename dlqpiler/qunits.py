@@ -78,6 +78,20 @@ def register_by_register_addition(circ: qiskit.QuantumCircuit, src_reg: List[qis
         controlled_addition = register_by_constant_addition(len(target_reg), 2**i).control(1)
         circ.append(controlled_addition, [src_reg[i]]+target_reg)
 
+def register_by_register_addition_dg(circ: qiskit.QuantumCircuit, src_reg: List[qiskit.circuit.Qubit], target_reg: List[qiskit.circuit.Qubit]):
+    """Build an inverse register-by-register addition circuit
+
+    :param circ: Target quantum circuit
+    :type circ: qiskit.QuantumCircuit
+    :param src_reg: Operand register
+    :type src_reg: List[qiskit.circuit.Qubit]
+    :param target_reg: Target register
+    :type target_reg: List[qiskit.circuit.Qubit]
+    """
+    for i in range(len(src_reg))[::-1]:
+        controlled_addition = register_by_constant_addition(len(target_reg), 2**i).inverse().control(1)
+        circ.append(controlled_addition, [src_reg[i]]+target_reg)
+
 def register_by_register_subtraction(circ: qiskit.QuantumCircuit, src_reg: List[qiskit.circuit.Qubit], target_reg: List[qiskit.circuit.Qubit]):
     """Build a register-by-register subtraction circuit
 
@@ -90,6 +104,20 @@ def register_by_register_subtraction(circ: qiskit.QuantumCircuit, src_reg: List[
     """
     for i in range(len(src_reg)):
         controlled_addition = register_by_constant_addition(len(target_reg), -2**i).control(1)
+        circ.append(controlled_addition, [src_reg[i]]+target_reg)
+
+def register_by_register_subtraction_dg(circ: qiskit.QuantumCircuit, src_reg: List[qiskit.circuit.Qubit], target_reg: List[qiskit.circuit.Qubit]):
+    """Build an inverse register-by-register subtraction circuit
+
+    :param circ: Target quantum circuit
+    :type circ: qiskit.QuantumCircuit
+    :param src_reg: Operand register
+    :type src_reg: List[qiskit.circuit.Qubit]
+    :param target_reg: Target register
+    :type target_reg: List[qiskit.circuit.Qubit]
+    """
+    for i in range(len(src_reg))[::-1]:
+        controlled_addition = register_by_constant_addition(len(target_reg), -2**i).inverse().control(1)
         circ.append(controlled_addition, [src_reg[i]]+target_reg)
 
 def multiproduct(circ: qiskit.QuantumCircuit, bases: List[List[qiskit.circuit.Qubit]], exponents: List[int], result: List[qiskit.circuit.Qubit], constant: int = 1):
@@ -176,7 +204,7 @@ def multiproduct_dg(circ: qiskit.QuantumCircuit, bases: List[List[qiskit.circuit
 
 # --- Relational circuits ---
 
-def register_less_than_register(circ: qiskit.QuantumCircuit, left: List[qiskit.circuit.Qubit], right: List[qiskit.circuit.Qubit], aux: qiskit.circuit.Qubit, result: qiskit.circuit.Qubit):
+def register_less_than_register(circ: qiskit.QuantumCircuit, left: List[qiskit.circuit.Qubit], right: List[qiskit.circuit.Qubit], aux: List[qiskit.circuit.Qubit], result: qiskit.circuit.Qubit):
     """Build the quantum circuit of the less-than operation
 
     :param circ: Target quantum circuit
@@ -190,12 +218,12 @@ def register_less_than_register(circ: qiskit.QuantumCircuit, left: List[qiskit.c
     :param result: result qubit
     :type result: qiskit.circuit.Qubit
     """
-    xleft = left + [aux]
+    xleft = left + aux
     register_by_register_subtraction(circ, right, xleft)
     circ.cx(aux, result)
-    register_by_register_addition(circ, right, xleft)
+    register_by_register_subtraction_dg(circ, right, xleft)
 
-def register_less_than_register_dg(circ: qiskit.QuantumCircuit, left: List[qiskit.circuit.Qubit], right: List[qiskit.circuit.Qubit], aux: qiskit.circuit.Qubit, result: qiskit.circuit.Qubit):
+def register_less_than_register_dg(circ: qiskit.QuantumCircuit, left: List[qiskit.circuit.Qubit], right: List[qiskit.circuit.Qubit], aux: List[qiskit.circuit.Qubit], result: qiskit.circuit.Qubit):
     """Build the inverse quantum circuit of the less-than operation
 
     :param circ: Target quantum circuit
@@ -209,10 +237,10 @@ def register_less_than_register_dg(circ: qiskit.QuantumCircuit, left: List[qiski
     :param result: result qubit
     :type result: qiskit.circuit.Qubit
     """
-    xleft = left + [aux]
+    xleft = left + aux
     register_by_register_addition(circ, right, xleft)
     circ.cx(aux, result)
-    register_by_register_subtraction(circ, right, xleft)
+    register_by_register_addition_dg(circ, right, xleft)
 
 def register_greater_than_register(circ: qiskit.QuantumCircuit, left: List[qiskit.circuit.Qubit], right: List[qiskit.circuit.Qubit], aux: qiskit.circuit.Qubit, result: qiskit.circuit.Qubit):
     """Build the quantum circuit of the greater-than operation

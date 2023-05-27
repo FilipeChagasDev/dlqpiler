@@ -163,6 +163,9 @@ class Parentheses(Expression):
     def get_leafs(self) -> Set[str]:
         return self.inner_expr.get_leafs()
 
+    def pre_build(self, quantum_evaluator):
+        self.inner_expr.pre_build(quantum_evaluator)
+
     def n_result_qubits(self, quantum_evaluator) -> int:
         return self.inner_expr.n_result_qubits(quantum_evaluator)
 
@@ -205,10 +208,15 @@ class UnaryMinus(ArithmeticExpression):
         :type inner_expr: Expression
         """
         super().__init__(line)
-        self.needs_result_allocation = False
         assert isinstance(inner_expr, Expression)
         self.inner_expr = inner_expr
 
+    def needs_result_allocation(self) -> bool:
+        return False
+
+    def pre_build(self, quantum_evaluator):
+        self.inner_expr.pre_build(quantum_evaluator)
+    
     def get_leafs(self) -> Set[str]:
         return self.inner_expr.get_leafs()
 
@@ -327,8 +335,8 @@ class Product(ArithmeticExpression):
                 while isinstance(self.operands[i], (Power, Parentheses)):
                     self.operands[i] = Parentheses.bypass(self.operands[i])
                     if isinstance(self.operands[i], Power):
-                        self.operands[i] = self.operands[i].base_expr
                         self.exponents[i] *= self.operands[i].exponent
+                        self.operands[i] = self.operands[i].base_expr
                 self.filtered_operands.append(self.operands[i])
                 self.filtered_exponents.append(self.exponents[i])
 
@@ -340,12 +348,12 @@ class Product(ArithmeticExpression):
             if not isinstance(op, Identifier):
                 op.build(quantum_evaluator)
 
-        qunits.multiproduct(quantum_evaluator.quantum_circuit, [op.result for op in self.filtered_operands], self.filtered_exponents, self.result)
+        qunits.multiproduct(quantum_evaluator.quantum_circuit, [op.result for op in self.filtered_operands], self.filtered_exponents, self.result, self.const_factor)
 
     def reverse(self, quantum_evaluator):
-        qunits.multiproduct_dg(quantum_evaluator.quantum_circuit, [op.result for op in self.filtered_operands], self.filtered_exponents, self.result)
+        qunits.multiproduct_dg(quantum_evaluator.quantum_circuit, [op.result for op in self.filtered_operands], self.filtered_exponents, self.result, self.const_factor)
 
-        for op in self.operands:
+        for op in self.filtered_operands[::-1]:
             if not isinstance(op, Identifier):
                 op.reverse()
 
@@ -448,7 +456,6 @@ class Summation(ArithmeticExpression):
 
     def build(self, quantum_evaluator):
         for i in range(len(self.filtered_operands)):
-            #self.filtered_operands[i].pre_build(quantum_evaluator)
             if self.filtered_operands[i].needs_result_allocation():
                 self.filtered_operands[i].alloc_result_qubits(quantum_evaluator)
 
@@ -463,9 +470,9 @@ class Summation(ArithmeticExpression):
     def reverse(self, quantum_evaluator):
         for i in range(len(self.filtered_operands)):
             if self.filtered_signals[i] == Signal.POS:
-                qunits.register_by_register_subtraction(quantum_evaluator.quantum_circuit, self.filtered_operands[i].result, self.result)
+                qunits.register_by_register_addition_dg(quantum_evaluator.quantum_circuit, self.filtered_operands[i].result, self.result)
             else:
-                qunits.register_by_register_addition(quantum_evaluator.quantum_circuit, self.filtered_operands[i].result, self.result)
+                qunits.register_by_register_subtraction_dg(quantum_evaluator.quantum_circuit, self.filtered_operands[i].result, self.result)
 
             if not isinstance(self.filtered_operands[i], Identifier):
                 self.filtered_operands[i].reverse(quantum_evaluator)
@@ -566,8 +573,8 @@ class Equal(RelationalExpression):
             qunits.register_equal_register_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux, self.result[0])
             if not isinstance(self.left, Identifier): self.left.reverse(quantum_evaluator)
             if not isinstance(self.right, Identifier): self.right.reverse(quantum_evaluator)
-            if self.left.needs_result_allocation(): self.left.release_result_qubits()
-            if self.right.needs_result_allocation(): self.right.release_result_qubits()
+            if self.left.needs_result_allocation(): self.left.release_result_qubits(quantum_evaluator)
+            if self.right.needs_result_allocation(): self.right.release_result_qubits(quantum_evaluator)
         elif self.mode == 'rc':
             qunits.register_equal_constant_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right, self.aux, self.result[0])
             if not isinstance(self.left, Identifier): self.left.reverse(quantum_evaluator)
@@ -578,9 +585,6 @@ class Equal(RelationalExpression):
             if self.right.needs_result_allocation(): self.right.release_result_qubits(quantum_evaluator)
         else:
             raise Exception('Undefined mode')
-        
-        for qbit in self.aux:
-            quantum_evaluator.free_ancilla(qbit)
 
 class NotEqual(RelationalExpression):
     def __init__(self, line: int, left: Expression | int, right: Expression | int) -> None:
@@ -629,8 +633,8 @@ class NotEqual(RelationalExpression):
             qunits.register_not_equal_register_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux, self.result[0])
             if not isinstance(self.left, Identifier): self.left.reverse(quantum_evaluator)
             if not isinstance(self.right, Identifier): self.right.reverse(quantum_evaluator)
-            if self.left.needs_result_allocation(): self.left.release_result_qubits()
-            if self.right.needs_result_allocation(): self.right.release_result_qubits()
+            if self.left.needs_result_allocation(): self.left.release_result_qubits(quantum_evaluator)
+            if self.right.needs_result_allocation(): self.right.release_result_qubits(quantum_evaluator)
         elif self.mode == 'rc':
             qunits.register_not_equal_constant_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right, self.aux, self.result[0])
             if not isinstance(self.left, Identifier): self.left.reverse(quantum_evaluator)
@@ -641,9 +645,6 @@ class NotEqual(RelationalExpression):
             if self.right.needs_result_allocation(): self.right.release_result_qubits(quantum_evaluator)
         else:
             raise Exception('Undefined mode')
-        
-        for qbit in self.aux:
-            quantum_evaluator.free_ancilla(qbit)
 
 class LessThan(RelationalExpression):
     def __init__(self, line: int, left: Expression | int, right: Expression | int) -> None:
@@ -654,7 +655,10 @@ class LessThan(RelationalExpression):
         if self.mode == 'rr':
             self.left.pre_build(quantum_evaluator)
             self.right.pre_build(quantum_evaluator)
-            self.aux = [quantum_evaluator.alloc_ancilla()]
+            nl = self.left.n_result_qubits(quantum_evaluator)
+            nr = self.right.n_result_qubits(quantum_evaluator)
+            n = (nr - nl if nr > nl else 0) + 1
+            self.aux = [quantum_evaluator.alloc_ancilla() for i in range(n)]
         elif self.mode == 'rc':
             self.left.pre_build(quantum_evaluator)
             nl = self.left.n_result_qubits(quantum_evaluator) 
@@ -676,7 +680,7 @@ class LessThan(RelationalExpression):
             if self.right.needs_result_allocation(): self.right.alloc_result_qubits(quantum_evaluator)
             if not isinstance(self.left, Identifier): self.left.build(quantum_evaluator)
             if not isinstance(self.right, Identifier): self.right.build(quantum_evaluator)
-            qunits.register_less_than_register(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux[0], self.result[0])
+            qunits.register_less_than_register(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux, self.result[0])
         elif self.mode == 'rc':
             if self.left.needs_result_allocation(): self.left.alloc_result_qubits(quantum_evaluator)
             if not isinstance(self.left, Identifier): self.left.build(quantum_evaluator)
@@ -690,7 +694,7 @@ class LessThan(RelationalExpression):
         
     def reverse(self, quantum_evaluator):
         if self.mode == 'rr':
-            qunits.register_less_than_register_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux[0], self.result[0])
+            qunits.register_less_than_register_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux, self.result[0])
             if not isinstance(self.left, Identifier): self.left.reverse(quantum_evaluator)
             if not isinstance(self.right, Identifier): self.right.reverse(quantum_evaluator)
             if self.left.needs_result_allocation(): self.left.release_result_qubits(quantum_evaluator)
@@ -705,9 +709,6 @@ class LessThan(RelationalExpression):
             if self.right.needs_result_allocation(): self.right.release_result_qubits(quantum_evaluator)
         else:
             raise Exception('Undefined mode')
-        
-        for qbit in self.aux:
-            quantum_evaluator.free_ancilla(qbit)
 
 class GreaterThan(RelationalExpression):
     def __init__(self, line: int, left: Expression | int, right: Expression | int) -> None:
@@ -718,7 +719,10 @@ class GreaterThan(RelationalExpression):
         if self.mode == 'rr':
             self.left.pre_build(quantum_evaluator)
             self.right.pre_build(quantum_evaluator)
-            self.aux = [quantum_evaluator.alloc_ancilla()]
+            nl = self.left.n_result_qubits(quantum_evaluator)
+            nr = self.right.n_result_qubits(quantum_evaluator)
+            n = (nl - nr if nl > nr else 0) + 1
+            self.aux = [quantum_evaluator.alloc_ancilla() for i in range(n)]
         elif self.mode == 'rc':
             self.left.pre_build(quantum_evaluator)
             nl = self.left.n_result_qubits(quantum_evaluator) 
@@ -740,7 +744,7 @@ class GreaterThan(RelationalExpression):
             if self.right.needs_result_allocation(): self.right.alloc_result_qubits(quantum_evaluator)
             if not isinstance(self.left, Identifier): self.left.build(quantum_evaluator)
             if not isinstance(self.right, Identifier): self.right.build(quantum_evaluator)
-            qunits.register_greater_than_register(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux[0], self.result[0])
+            qunits.register_greater_than_register(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux, self.result[0])
         elif self.mode == 'rc':
             if self.left.needs_result_allocation(): self.left.alloc_result_qubits(quantum_evaluator)
             if not isinstance(self.left, Identifier): self.left.build(quantum_evaluator)
@@ -754,7 +758,7 @@ class GreaterThan(RelationalExpression):
         
     def reverse(self, quantum_evaluator):
         if self.mode == 'rr':
-            qunits.register_greater_than_register_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux[0], self.result[0])
+            qunits.register_greater_than_register_dg(quantum_evaluator.quantum_circuit, self.left.result, self.right.result, self.aux, self.result[0])
             if not isinstance(self.left, Identifier): self.left.reverse(quantum_evaluator)
             if not isinstance(self.right, Identifier): self.right.reverse(quantum_evaluator)
             if self.left.needs_result_allocation(): self.left.release_result_qubits(quantum_evaluator)
@@ -769,10 +773,7 @@ class GreaterThan(RelationalExpression):
             if self.right.needs_result_allocation(): self.right.release_result_qubits(quantum_evaluator)
         else:
             raise Exception('Undefined mode')
-        
-        for qbit in self.aux:
-            quantum_evaluator.free_ancilla(qbit)
-        
+
 # --- logic expression AST nodes ---
 
 class LogicExpression(Expression):
@@ -791,7 +792,7 @@ class Not(LogicExpression):
         """
         :param line: line of code
         :type line: int
-        :param operand: self-descriptive
+        :param operand: self-descriptive    
         :type operand: Expression
         """
         super().__init__(line)
@@ -978,6 +979,7 @@ class RegisterExpressionDefinition(RegisterDefinition):
         super().__init__(line, name, n)
         assert isinstance(expr, Expression)
         self.expr = expr
+        self.target = None
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -987,17 +989,25 @@ class RegisterExpressionDefinition(RegisterDefinition):
             'expr': self.expr.to_dict()
         }
     
+    def pre_build(self, quantum_evaluator):
+        """Pre-build the inner expression tree
+
+        :param quantum_evaluator: Parent quantum evaluator
+        :type quantum_evaluator: QuantumEvaluator
+        """
+        self.target = [qbit for qbit in quantum_evaluator.get_qiskit_register(self.name)]
+        self.expr.pre_build(quantum_evaluator)
+
     def build(self, quantum_evaluator):
         """Build the quantum circuit that evaluates the inner expression and asign the result to the target register
 
         :param quantum_evaluator: Parent quantum evaluator
         :type quantum_evaluator: QuantumEvaluator
         """
-        self.expr.pre_build(quantum_evaluator)
-        if self.expr.needs_result_allocation(): self.expr.alloc_result_qubits(quantum_evaluator)
+        #if self.expr.needs_result_allocation(): self.expr.alloc_result_qubits(quantum_evaluator)
+        self.expr.result = self.target
         self.expr.build(quantum_evaluator)
-        target = [qbit for qbit in quantum_evaluator.get_qiskit_register(self.name)]
-        qunits.register_by_register_addition(quantum_evaluator.quantum_circuit, self.expr.result, target)
+        #qunits.register_by_register_addition(quantum_evaluator.quantum_circuit, self.expr.result, self.target)
 
     def reverse(self, quantum_evaluator):
         """Build the inverse quantum circuit
@@ -1005,10 +1015,9 @@ class RegisterExpressionDefinition(RegisterDefinition):
         :param quantum_evaluator: Parent quantum evaluator
         :type quantum_evaluator: QuantumEvaluator
         """
-        target = [qbit for qbit in quantum_evaluator.get_qiskit_register(self.name)]
-        qunits.register_by_register_subtraction(quantum_evaluator.quantum_circuit, self.expr.result, target)
+        #qunits.register_by_register_subtraction(quantum_evaluator.quantum_circuit, self.expr.result, self.target)
         self.expr.reverse(quantum_evaluator)
-        if self.expr.needs_result_allocation(): self.expr.release_result_qubits(quantum_evaluator)
+        #if self.expr.needs_result_allocation(): self.expr.release_result_qubits(quantum_evaluator)
 
 class RegisterSetDefinition(RegisterDefinition):
     def __init__(self, line: int, name: str, n: int, values: Set[int]) -> None:

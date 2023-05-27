@@ -1,6 +1,6 @@
 [project]
 name = "dlqpiler"
-version = "0.0.1"
+version = "1.0.0"
 authors = [
     { name="Filipe C. Ferraz", email="filipe.ferraz0@gmail.com" },
 ]
@@ -11,7 +11,7 @@ dependencies = [
   "ply >= 3.11",
   "qiskit >= 0.22",
   "typer >= 0.7",
-  "pandas",
+  "pandas >= 1.5",
   "openpyxl"
 ]
 

@@ -255,5 +255,9 @@ class QuantumEvaluator():
     def build_all(self):
         """Build the entire quantum circuit
         """
+        for regdef in self.code.regdefseq:
+            if isinstance(regdef, RegisterExpressionDefinition):
+                regdef.pre_build(self)
+                
         self.build_grover_search(self.code.terminator.it)
         self.append_measurements()
