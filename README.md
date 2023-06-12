@@ -16,6 +16,33 @@ Dlqpiler is a just-in-time (JIT) compiler. To compile and simulate a code, you m
 
 Note that when executing code, errors can occur that are not handled very well (especially if they are syntax errors). So if you get a strange error when executing a DLQpiler command, check the syntax correctness of your code. Feel free to create issues reporting problems in this repository, and also to create forks with improvements for this project.
 
+## Language Overview
+
+The current version (1.0.0) of the DLQ language is dedicated to solving satisfiability problems of simple expressions composed of logical, arithmetic and relational operators. It is possible to solve problems like Boolean satisfiability, prime factoring, and solving systems of equations. In the examples directory of this repository there are two examples of code with results, which serve as a proof of concept for the project. However, there are still technical problems (bugs) with the code that need to be investigated and fixed. Also, the use of this compiler is still restricted to the **aer_simulator**, as there are no features for correction and mitigation of errors due to the quantum decoherence of the NISQ computers. 
+
+The syntax of the language is composed of the following elements:
+
+* **Variables** - mathematical symbols defined in terms of relevance sets or expressions. A variable in DLQ is immutable and does not necessarily have a defined value until the program is run, but has a set of possible values. The syntax of defining a variable is as follows:
+    * as set: ``<name> [<size>] := {<number>, <number>, ..., <number>}``. where ``<name>`` is the variable name, ``<size>`` is the variable size in number of qubits, and ``<number>`` is a natural number. In this type of declaration, the variable is defined as belonging to a closed set of natural numbers. This will result in a quantum register initialized as a superposition of the values of the set.
+    * as expression: ``<name> [<size>] := <expression>`` In this case, the value of the variable is defined as an expression that depends on other variables that are already defined. In the compilation process, this is translated into a quantum register that is used by the quantum oracle of Grover's algorithm to store the result of the expression. 
+
+* **Operators with one or two operands** - are the symbols that compose the expressions, and can be logical, arithmetic, and relational. Currently, the following operators are available:
+  * Logical not: ``not <expression>``
+  * Logical or: ``<expression> or <expression>``
+  * Logical and: ``<expression> and <expression>``
+  * Addition: ``<expression> + <expression>``
+  * Subtraction: ``<expression> - <expression>``
+  * Product: ``<expression> * <expression>``
+  * Power: ``<expression> ^ <number>`` (only constant exponents allowed)
+  * Equal: ``<expression> = <expression>``
+  * Not-equal: ``<expression> != <expression>``
+  * Less-than: ``<expression> < <expression>``
+  * Greater-than: ``<expression> > <expression>``
+
+* **Terminators** - is the final sentence of the code, which defines how the problem should be solved. Currently there is only one terminator: **amplify**. This terminator has the syntax ``amplify <name> <number> times``, where ``<name>`` is the name of the binary variable that is used as the search conditional, and ``<number>`` is the number of iterations of Grover's algorithm.
+
+
+
 ## Examples
 
 ### Boolean satisfiability
@@ -30,6 +57,8 @@ x4[1] in {false, true};
 y[1] := (x1 or not x3 or x4) and (not x2 and x3 and not x4);
 amplify y 3 times
 ```
+
+From this code, a quantum Grover search circuit with 3 iterations will be generated to search for the solution of the Boolean expression presented above. 
 
 The result obtained in the simulation of this code is as follows:
 
@@ -64,6 +93,8 @@ p2[4] in {2, 3, 5, 7};
 y[1] := p1*p2=15;
 amplify y 2 times
 ```
+
+From this code, a quantum Grover search circuit with 2 iterations will be generated to search for the solution of the expression ``p1*p2=15``. 
 
 The simulation result of this code, with 1024 shots, is as follows:
 
