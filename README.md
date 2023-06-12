@@ -1,5 +1,7 @@
 # DLQpiler
 
+![version](https://img.shields.io/badge/version-1.0.0-red) [![DOI](https://zenodo.org/badge/613620097.svg)](https://zenodo.org/badge/latestdoi/613620097)
+
 DLQpiler is a compiler of the DLQ language (Declarative Language for Quantum). Both the compiler and the language are part of my bachelor's thesis in Computer Engineering (in Brazil we call TCC, which is a portuguese acronym for end-of-course work). DLQ is, as the name suggests, a high-level declarative language of abstraction that is translated into quantum circuits by the compiler. The grammar of this language is context-free, consisting of immutable variables, arithmetic operators, relational operators, logic operators, and statements specific to quantum algorithms. The DLQpiler compiler is written in Python, based on the PLY library and the Qiskit SDK. This compiler generates quantum circuits for the IBM Quantum Experience platform.
 
 
