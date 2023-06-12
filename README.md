@@ -2,6 +2,9 @@
 
 DLQpiler is a compiler of the DLQ language (Declarative Language for Quantum). Both the compiler and the language are part of my senior thesis (which in Brazil we call TCC) in Computer Engineering. DLQ is, as the name suggests, a high-level declarative language of abstraction that is translated into quantum circuits by the compiler. The grammar of this language is context-free, consisting of immutable variables, arithmetic operators, relational operators, logic operators, and statements specific to quantum algorithms. The DLQpiler compiler is written in Python, based on the PLY library and the Qiskit SDK. This compiler generates quantum circuits for the IBM Quantum Experience platform.
 
+
+For now, the most detailed documentation of the project is my monograph in Portuguese, which is yet to be published in UFMT's virtual library. Soon I will post articles in Portuguese and English about this project.
+
 ## How to use
 
 First, you must install the compiler. You can do this using the following command:
@@ -41,7 +44,25 @@ The syntax of the language is composed of the following elements:
 
 * **Terminators** - is the final sentence of the code, which defines how the problem should be solved. Currently there is only one terminator: **amplify**. This terminator has the syntax ``amplify <name> <number> times``, where ``<name>`` is the name of the binary variable that is used as the search conditional, and ``<number>`` is the number of iterations of Grover's algorithm.
 
+The general structure of a DLQ program goes something like this:
 
+```
+<name1_1> [<size1_1>] := {<number>, <number>, ..., <number>}; 
+<name1_2> [<size1_2>] := {<number>, <number>, ..., <number>};
+...
+<name1_N> [<size1_N>] := {<number>, <number>, ..., <number>};
+
+<name2_1> [<size2_1>] := <expression>;
+<name2_2> [<size2_2>] := <expression>;
+...
+<name2_N> [<size2_N>] := <expression>;
+
+<bin_var_name> [1] := <expression>;
+
+amplify <bin_var_name> <n_iterations> times
+```
+
+Pay attention to the following detail: **there is no semicolon after the terminator!**
 
 ## Examples
 
