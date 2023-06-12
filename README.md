@@ -23,8 +23,8 @@ The current version (1.0.0) of the DLQ language is dedicated to solving satisfia
 The syntax of the language is composed of the following elements:
 
 * **Variables** - mathematical symbols defined in terms of relevance sets or expressions. A variable in DLQ is immutable and does not necessarily have a defined value until the program is run, but has a set of possible values. The syntax of defining a variable is as follows:
-    * as set: ``<name> [<size>] := {<number>, <number>, ..., <number>}``. where ``<name>`` is the variable name, ``<size>`` is the variable size in number of qubits, and ``<number>`` is a natural number. In this type of declaration, the variable is defined as belonging to a closed set of natural numbers. This will result in a quantum register initialized as a superposition of the values of the set.
-    * as expression: ``<name> [<size>] := <expression>`` In this case, the value of the variable is defined as an expression that depends on other variables that are already defined. In the compilation process, this is translated into a quantum register that is used by the quantum oracle of Grover's algorithm to store the result of the expression. 
+    * as set: ``<name> [<size>] := {<number>, <number>, ..., <number>};``. where ``<name>`` is the variable name, ``<size>`` is the variable size in number of qubits, and ``<number>`` is a natural number. In this type of declaration, the variable is defined as belonging to a closed set of natural numbers. This will result in a quantum register initialized as a superposition of the values of the set.
+    * as expression: ``<name> [<size>] := <expression>;`` In this case, the value of the variable is defined as an expression that depends on other variables that are already defined. In the compilation process, this is translated into a quantum register that is used by the quantum oracle of Grover's algorithm to store the result of the expression. 
 
 * **Operators with one or two operands** - are the symbols that compose the expressions, and can be logical, arithmetic, and relational. Currently, the following operators are available:
   * Logical not: ``not <expression>``
